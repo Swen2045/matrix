@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Матрица Эйзенхауэра · Облачная версия</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      background: #f4f7fc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .app {
+      max-width: 1300px;
+      width: 100%;
+    }
+    h1 {
+      font-weight: 500;
+      font-size: 2rem;
+      color: #1e293b;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .sync-status {
+      font-size: 0.8rem;
+      background: #e2e8f0;
+      padding: 4px 12px;
+      border-radius: 30px;
+      color: #334155;
+      font-weight: normal;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sync-status.synced { background: #dcfce7; color: #166534; }
+    .sync-status.syncing { background: #fef9c3; color: #854d0e; }
+    .sync-status.error { background: #fee2e2; color: #b91c1c; }
+    .input-panel {
+      background: white;
+      border-radius: 28px;
+      padding: 20px 24px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+      margin-bottom: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 14px;
+      border: 1px solid #e9eef3;
+    }
+    .task-input {
+      flex: 3 1 260px;
+    }
+    .task-input label {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .task-input input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1.5px solid #dde3e9;
+      border-radius: 24px;
+      font-size: 1rem;
+      background: #fafcff;
+      transition: border 0.15s;
+    }
+    .task-input input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: white;
+    }
+    .add-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(37,99,235,0.2);
+      transition: 0.15s;
+      border: 1px solid #2563eb;
+      flex: 0 0 auto;
+    }
+    .add-btn:hover {
+      background: #1d4ed8;
+      transform: scale(1.02);
+    }
+    .matrix {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    .quadrant {
+      background: white;
+      border-radius: 28px;
+      padding: 20px 16px 16px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+    }
+    .quadrant-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 2px dashed #cbd5e1;
+    }
+    .quadrant-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .badge {
+      background: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #334155;
+    }
+    .urgent-important { background: #fef2f2; border-left: 8px solid #dc2626; }
+    .not-urgent-important { background: #f0fdf4; border-left: 8px solid #16a34a; }
+    .urgent-not-important { background: #fff7ed; border-left: 8px solid #ea580c; }
+    .not-urgent-not-important { background: #f8fafc; border-left: 8px solid #94a3b8; }
+    .tasks-container {
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .task-card {
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(2px);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      border: 1px solid rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.1s;
+      cursor: grab;
+      user-select: none;
+    }
+    .task-card:active { cursor: grabbing; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+    .task-card.dragging { opacity: 0.5; transform: scale(0.98); }
+    .task-text {
+      font-weight: 500;
+      color: #0f172a;
+      word-break: break-word;
+      padding-right: 8px;
+    }
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .task-date {
+      font-size: 0.7rem;
+      background: #eef2ff;
+      padding: 4px 8px;
+      border-radius: 30px;
+      color: #1e40af;
+      white-space: nowrap;
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+      color: #94a3b8;
+      padding: 0 5px;
+      transition: 0.1s;
+    }
+    .delete-btn:hover { color: #b91c1c; }
+    .empty-placeholder {
+      color: #94a3b8;
+      font-style: italic;
+      padding: 20px 0;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .list-section {
+      background: white;
+      border-radius: 28px;
+      padding: 20px 24px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+      border: 1px solid #e9eef3;
+    }
+    .list-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .list-header h3 { font-weight: 600; color: #0f172a; }
+    .sort-controls { display: flex; gap: 12px; }
+    .sort-btn {
+      background: #f1f5f9;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #1e293b;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .sort-btn.active { background: #2563eb; color: white; }
+    .task-list {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #fafcff;
+      border-radius: 18px;
+      border: 1px solid #eef2f6;
+    }
+    .list-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .list-quadrant-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 40px;
+      background: #e2e8f0;
+      color: #1e293b;
+      text-transform: uppercase;
+    }
+    .urgent-badge { background: #fee2e2; color: #b91c1c; }
+    .important-badge { background: #dcfce7; color: #166534; }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .secondary-btn {
+      background: none;
+      border: 1px solid #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .secondary-btn:hover { background: #f1f5f9; }
+    .danger-btn {
+      background: none;
+      border: 1px solid #fca5a5;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: #b91c1c;
+    }
+    .danger-btn:hover { background: #fee2e2; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>
+    📋 Матрица Эйзенхауэра 
+    <span class="sync-status" id="syncStatus">
+      <span>🔄</span> <span id="syncText">Загрузка...</span>
+    </span>
+  </h1>
+
+  <div class="input-panel">
+    <div class="task-input">
+      <label>Новая задача</label>
+      <input type="text" id="taskInput" placeholder="Например: Позвонить клиенту" autocomplete="off">
+    </div>
+    <button class="add-btn" id="addTaskBtn">➕ Добавить</button>
+  </div>
+
+  <div class="matrix">
+    <div class="quadrant urgent-important" data-quadrant="q1">
+      <div class="quadrant-header"><h2>🔥 Срочно и Важно</h2><span class="badge">Сделать сейчас</span></div>
+      <div class="tasks-container" id="q1"></div>
+    </div>
+    <div class="quadrant not-urgent-important" data-quadrant="q2">
+      <div class="quadrant-header"><h2>📌 Важно, не срочно</h2><span class="badge">Запланировать</span></div>
+      <div class="tasks-container" id="q2"></div>
+    </div>
+    <div class="quadrant urgent-not-important" data-quadrant="q3">
+      <div class="quadrant-header"><h2>⚡ Срочно, не важно</h2><span class="badge">Делегировать</span></div>
+      <div class="tasks-container" id="q3"></div>
+    </div>
+    <div class="quadrant not-urgent-not-important" data-quadrant="q4">
+      <div class="quadrant-header"><h2>🗑️ Не срочно и не важно</h2><span class="badge">Отложить</span></div>
+      <div class="tasks-container" id="q4"></div>
+    </div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-header">
+      <h3>📋 Все задачи</h3>
+      <div class="action-buttons">
+        <div class="sort-controls">
+          <button class="sort-btn active" data-sort="urgency">🔴 По срочности</button>
+          <button class="sort-btn" data-sort="date">📅 По дате</button>
+        </div>
+        <button class="secondary-btn" id="forceSyncBtn">🔄 Синхронизировать</button>
+        <button class="danger-btn" id="clearAllBtn">🗑️ Очистить всё</button>
+      </div>
+    </div>
+    <ul class="task-list" id="taskListView"></ul>
+  </div>
+</div>
+
+<script>
+  (function(){
+    'use strict';
+
+    // ⚠️⚠️⚠️ ВСТАВЬТЕ СВОИ ДАННЫЕ СЮДА ⚠️⚠️⚠️
+    const JSONBIN_API_KEY = '$2a$10$0ozmFe4Nvhh5sArMK8ht6ehFszuWcGdVcoKJmHSDLjXNjBT.gjrv.';
+    const JSONBIN_BIN_ID = '69e9151436566621a8deeaa1';
+    
+    // URL для запросов
+    const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+    
+    // Состояние
+    let tasks = [];
+    let syncInProgress = false;
+    let lastSyncedData = null;
+    
+    const STORAGE_KEY = 'eisenhower_tasks_local_backup';
+    
+    // DOM элементы
+    const q1 = document.getElementById('q1');
+    const q2 = document.getElementById('q2');
+    const q3 = document.getElementById('q3');
+    const q4 = document.getElementById('q4');
+    const containers = { q1, q2, q3, q4 };
+    const taskInput = document.getElementById('taskInput');
+    const addBtn = document.getElementById('addTaskBtn');
+    const listView = document.getElementById('taskListView');
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const forceSyncBtn = document.getElementById('forceSyncBtn');
+    const syncStatusEl = document.getElementById('syncStatus');
+    const syncTextEl = document.getElementById('syncText');
+    
+    let currentSort = 'urgency';
+    let draggedTaskId = null;
+
+    // ---------- СТАТУС СИНХРОНИЗАЦИИ ----------
+    function setSyncStatus(status, text) {
+      syncStatusEl.className = 'sync-status ' + status;
+      const icon = status === 'synced' ? '☁️' : status === 'syncing' ? '⏳' : status === 'error' ? '⚠️' : '🔄';
+      syncTextEl.innerHTML = icon + ' ' + text;
+    }
+
+    // ---------- РАБОТА С ОБЛАКОМ ----------
+    async function loadFromCloud() {
+      if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('СЮДА')) {
+        setSyncStatus('error', 'Не указан API ключ');
+        loadFromLocalBackup();
+        return;
+      }
+      
+      setSyncStatus('syncing', 'Загрузка из облака...');
+      
+      try {
+        const response = await fetch(JSONBIN_URL, {
+          headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        });
+        
+        if (!response.ok) throw new Error('Ошибка загрузки');
+        
+        const data = await response.json();
+        const cloudTasks = data.record?.tasks || [];
+        
+        if (cloudTasks.length > 0) {
+          tasks = cloudTasks;
+          lastSyncedData = JSON.stringify(tasks);
+          saveToLocalBackup();
+          setSyncStatus('synced', 'Загружено из облака');
+        } else {
+          // Если облако пустое, но есть локальный бэкап - спросим?
+          const local = localStorage.getItem(STORAGE_KEY);
+          if (local) {
+            tasks = JSON.parse(local);
+            await saveToCloud(true); // тихая загрузка на сервер
+            setSyncStatus('synced', 'Локальные данные загружены в облако');
+          } else {
+            // Первое использование
+            tasks = [
+              { id: generateId(), text: 'Пример: Важная встреча', quadrant: 'q1', createdAt: new Date().toISOString() },
+              { id: generateId(), text: 'Пример: Почитать книгу', quadrant: 'q2', createdAt: new Date(Date.now() - 3600000).toISOString() }
+            ];
+            await saveToCloud();
+            setSyncStatus('synced', 'Созданы демо-задачи');
+          }
+        }
+        
+        renderAll();
+      } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        setSyncStatus('error', 'Ошибка соединения. Локальные данные');
+        loadFromLocalBackup();
+      }
+    }
+
+    function loadFromLocalBackup() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          tasks = JSON.parse(stored);
+        } catch (e) {
+          tasks = [];
+        }
+      }
+      renderAll();
+    }
+
+    function saveToLocalBackup() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    async function saveToCloud(silent = false) {
+      if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('СЮДА')) {
+        if (!silent) setSyncStatus('error', 'API ключ не настроен');
+        saveToLocalBackup();
+        return;
+      }
+      
+      if (!silent) setSyncStatus('syncing', 'Сохранение...');
+      
+      try {
+        const response = await fetch(JSONBIN_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': JSONBIN_API_KEY
+          },
+          body: JSON.stringify({ tasks })
+        });
+        
+        if (!response.ok) throw new Error('Ошибка сохранения');
+        
+        lastSyncedData = JSON.stringify(tasks);
+        saveToLocalBackup();
+        if (!silent) setSyncStatus('synced', 'Сохранено в облаке');
+      } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        if (!silent) setSyncStatus('error', 'Нет связи. Сохранено локально');
+        saveToLocalBackup();
+      }
+    }
+
+    async function syncIfNeeded() {
+      const currentData = JSON.stringify(tasks);
+      if (currentData !== lastSyncedData) {
+        await saveToCloud();
+      }
+    }
+
+    // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
+    function generateId() {
+      return Date.now() + '-' + Math.random().toString(36).substr(2, 8) + '-' + Math.random().toString(36).substr(2, 4);
+    }
+
+    async function clearAllTasks() {
+      if (confirm('Вы уверены? Все задачи будут удалены из облака и со всех устройств.')) {
+        tasks = [];
+        await saveToCloud();
+        renderAll();
+      }
+    }
+
+    async function deleteTaskById(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      await syncIfNeeded();
+      renderAll();
+    }
+
+    function renderAll() {
+      renderQuadrants();
+      renderSortedList();
+    }
+
+    function renderQuadrants() {
+      for (let key in containers) containers[key].innerHTML = '';
+      
+      if (tasks.length === 0) {
+        for (let key in containers) {
+          const emptyMsg = document.createElement('div');
+          emptyMsg.className = 'empty-placeholder';
+          emptyMsg.textContent = 'Перетащите или добавьте задачу';
+          containers[key].appendChild(emptyMsg);
+        }
+        return;
+      }
+
+      const grouped = { q1: [], q2: [], q3: [], q4: [] };
+      tasks.forEach(task => {
+        if (grouped[task.quadrant]) grouped[task.quadrant].push(task);
+      });
+
+      for (let quad in grouped) {
+        const container = containers[quad];
+        if (grouped[quad].length === 0) {
+          const emptyMsg = document.createElement('div');
+          emptyMsg.className = 'empty-placeholder';
+          emptyMsg.textContent = 'Пусто';
+          container.appendChild(emptyMsg);
+          continue;
+        }
+        grouped[quad].forEach(task => {
+          const card = createTaskCard(task);
+          container.appendChild(card);
+        });
+      }
+    }
+
+    function createTaskCard(task) {
+      const card = document.createElement('div');
+      card.className = 'task-card';
+      card.setAttribute('draggable', 'true');
+      card.dataset.id = task.id;
+      card.dataset.quadrant = task.quadrant;
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'task-text';
+      textSpan.textContent = task.text;
+
+      const metaDiv = document.createElement('div');
+      metaDiv.className = 'task-meta';
+      
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'task-date';
+      dateSpan.textContent = formatDate(task.createdAt);
+      
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.innerHTML = '✕';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteTaskById(task.id);
+      });
+
+      metaDiv.appendChild(dateSpan);
+      metaDiv.appendChild(delBtn);
+      card.appendChild(textSpan);
+      card.appendChild(metaDiv);
+
+      card.addEventListener('dragstart', handleDragStart);
+      card.addEventListener('dragend', handleDragEnd);
+      
+      return card;
+    }
+
+    function formatDate(isoString) {
+      try {
+        const d = new Date(isoString);
+        return d.toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(',', '');
+      } catch { return '—'; }
+    }
+
+    function handleDragStart(e) {
+      const card = e.target.closest('.task-card');
+      if (!card) return;
+      draggedTaskId = card.dataset.id;
+      e.dataTransfer.setData('text/plain', draggedTaskId);
+      card.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+      const card = e.target.closest('.task-card');
+      if (card) card.classList.remove('dragging');
+    }
+
+    function setupDropZones() {
+      document.querySelectorAll('.tasks-container').forEach(container => {
+        container.addEventListener('dragover', (e) => e.preventDefault());
+        container.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          const targetQuadrant = e.currentTarget.id;
+          const taskId = e.dataTransfer.getData('text/plain');
+          if (!taskId) return;
+          
+          const task = tasks.find(t => t.id === taskId);
+          if (!task) return;
+          
+          if (task.quadrant !== targetQuadrant) {
+            task.quadrant = targetQuadrant;
+            await syncIfNeeded();
+            renderAll();
+          }
+        });
+      });
+      
+      document.addEventListener('dragover', (e) => e.preventDefault());
+      document.addEventListener('drop', (e) => e.preventDefault());
+    }
+
+    async function addNewTask() {
+      const text = taskInput.value.trim();
+      if (!text) return;
+      
+      const newTask = {
+        id: generateId(),
+        text: text,
+        quadrant: 'q1',
+        createdAt: new Date().toISOString()
+      };
+      
+      tasks.push(newTask);
+      await syncIfNeeded();
+      taskInput.value = '';
+      renderAll();
+    }
+
+    function getUrgencyOrder(quadrant) {
+      const order = { 'q1': 1, 'q3': 2, 'q2': 3, 'q4': 4 };
+      return order[quadrant] || 99;
+    }
+
+    function renderSortedList() {
+      let sorted = [...tasks];
+      
+      if (currentSort === 'urgency') {
+        sorted.sort((a, b) => {
+          const orderA = getUrgencyOrder(a.quadrant);
+          const orderB = getUrgencyOrder(b.quadrant);
+          if (orderA !== orderB) return orderA - orderB;
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+      } else {
+        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+      
+      listView.innerHTML = '';
+      
+      if (sorted.length === 0) {
+        listView.innerHTML = '<li class="empty-placeholder" style="list-style:none;">Список пуст</li>';
+        return;
+      }
+      
+      const mapQuad = {
+        q1: '🔴 Срочно·Важно', q2: '🟢 Важно·Не срочно',
+        q3: '🟠 Срочно·Не важно', q4: '⚪ Не срочно·Не важно'
+      };
+      
+      sorted.forEach(task => {
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'list-left';
+        
+        const quadrantTag = document.createElement('span');
+        quadrantTag.className = 'list-quadrant-tag';
+        quadrantTag.textContent = mapQuad[task.quadrant] || task.quadrant;
+        if (task.quadrant === 'q1' || task.quadrant === 'q3') quadrantTag.classList.add('urgent-badge');
+        if (task.quadrant === 'q1' || task.quadrant === 'q2') quadrantTag.classList.add('important-badge');
+        
+        const textSpan = document.createElement('span');
+        textSpan.style.fontWeight = '500';
+        textSpan.textContent = task.text;
+        
+        const dateSpan = document.createElement('span');
+        dateSpan.style.fontSize = '0.8rem';
+        dateSpan.style.color = '#475569';
+        dateSpan.textContent = formatDate(task.createdAt);
+        
+        leftDiv.appendChild(quadrantTag);
+        leftDiv.appendChild(textSpan);
+        leftDiv.appendChild(dateSpan);
+        
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-btn';
+        delBtn.innerHTML = '✕';
+        delBtn.addEventListener('click', () => deleteTaskById(task.id));
+        
+        li.appendChild(leftDiv);
+        li.appendChild(delBtn);
+        listView.appendChild(li);
+      });
+    }
+
+    function initSortButtons() {
+      sortButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sortType = btn.dataset.sort;
+          if (!sortType) return;
+          currentSort = sortType;
+          sortButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderSortedList();
+        });
+      });
+    }
+
+    // ---------- ИНИЦИАЛИЗАЦИЯ ----------
+    async function init() {
+      renderAll();
+      setupDropZones();
+      initSortButtons();
+      
+      addBtn.addEventListener('click', addNewTask);
+      taskInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNewTask(); });
+      clearAllBtn.addEventListener('click', clearAllTasks);
+      forceSyncBtn.addEventListener('click', async () => { await saveToCloud(); });
+      
+      // Загружаем из облака при старте
+      await loadFromCloud();
+    }
+
+    init();
+  })();
+</script>
+</body>
+</html>
