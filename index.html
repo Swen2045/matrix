@@ -2,28 +2,136 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Матрица Эйзенхауэра · Облачная версия</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Матрица Эйзенхауэра · Облако</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
     }
+    
     body {
       background: #f4f7fc;
       min-height: 100vh;
       display: flex;
       justify-content: center;
       padding: 24px 16px;
+      transition: background 0.2s;
     }
+    
+    /* Тёмная тема */
+    body.dark {
+      background: #0f172a;
+    }
+    
+    body.dark .app h1,
+    body.dark .list-header h3,
+    body.dark .quadrant-header h2 {
+      color: #e2e8f0;
+    }
+    
+    body.dark .input-panel,
+    body.dark .quadrant,
+    body.dark .list-section {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    
+    body.dark .task-input input {
+      background: #0f172a;
+      border-color: #334155;
+      color: #e2e8f0;
+    }
+    
+    body.dark .task-input input:focus {
+      border-color: #3b82f6;
+      background: #1e293b;
+    }
+    
+    body.dark .task-card {
+      background: #334155;
+      border-color: #475569;
+    }
+    
+    body.dark .task-text {
+      color: #f1f5f9;
+    }
+    
+    body.dark .task-date {
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    
+    body.dark .empty-placeholder {
+      color: #64748b;
+    }
+    
+    body.dark .list-item {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    
+    body.dark .list-quadrant-tag {
+      background: #334155;
+      color: #cbd5e1;
+    }
+    
+    body.dark .sort-btn {
+      background: #334155;
+      color: #cbd5e1;
+    }
+    
+    body.dark .sort-btn.active {
+      background: #2563eb;
+      color: white;
+    }
+    
+    body.dark .secondary-btn {
+      border-color: #475569;
+      color: #cbd5e1;
+    }
+    
+    body.dark .danger-btn {
+      border-color: #7f1d1d;
+      color: #fca5a5;
+    }
+    
+    body.dark .sync-status {
+      background: #334155;
+      color: #cbd5e1;
+    }
+    
+    body.dark .sync-status.synced {
+      background: #14532d;
+      color: #bbf7d0;
+    }
+    
+    body.dark .sync-status.error {
+      background: #7f1d1d;
+      color: #fecaca;
+    }
+    
+    body.dark .badge {
+      background: #334155;
+      color: #cbd5e1;
+    }
+    
+    body.dark .quadrant-header {
+      border-bottom-color: #475569;
+    }
+    
+    /* Адаптивность */
     .app {
       max-width: 1300px;
       width: 100%;
     }
+    
     h1 {
       font-weight: 500;
-      font-size: 2rem;
+      font-size: clamp(1.5rem, 5vw, 2rem);
       color: #1e293b;
       margin-bottom: 8px;
       display: flex;
@@ -31,20 +139,47 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+    
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+    
+    .theme-toggle {
+      background: none;
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      border-radius: 30px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: 0.1s;
+      line-height: 1;
+    }
+    
+    body.dark .theme-toggle {
+      border-color: #475569;
+      background: #1e293b;
+    }
+    
     .sync-status {
       font-size: 0.8rem;
       background: #e2e8f0;
-      padding: 4px 12px;
+      padding: 6px 12px;
       border-radius: 30px;
       color: #334155;
       font-weight: normal;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
     }
+    
     .sync-status.synced { background: #dcfce7; color: #166534; }
     .sync-status.syncing { background: #fef9c3; color: #854d0e; }
     .sync-status.error { background: #fee2e2; color: #b91c1c; }
+    
     .input-panel {
       background: white;
       border-radius: 28px;
@@ -57,9 +192,11 @@
       gap: 14px;
       border: 1px solid #e9eef3;
     }
+    
     .task-input {
-      flex: 3 1 260px;
+      flex: 3 1 200px;
     }
+    
     .task-input label {
       display: block;
       font-size: 0.8rem;
@@ -69,6 +206,11 @@
       color: #64748b;
       margin-bottom: 6px;
     }
+    
+    body.dark .task-input label {
+      color: #94a3b8;
+    }
+    
     .task-input input {
       width: 100%;
       padding: 14px 18px;
@@ -78,11 +220,13 @@
       background: #fafcff;
       transition: border 0.15s;
     }
+    
     .task-input input:focus {
       outline: none;
       border-color: #3b82f6;
       background: white;
     }
+    
     .add-btn {
       background: #2563eb;
       color: white;
@@ -96,17 +240,112 @@
       transition: 0.15s;
       border: 1px solid #2563eb;
       flex: 0 0 auto;
+      white-space: nowrap;
     }
+    
     .add-btn:hover {
       background: #1d4ed8;
       transform: scale(1.02);
     }
+    
+    /* Матрица — мобильная адаптация */
     .matrix {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
       margin-bottom: 36px;
     }
+    
+    @media (max-width: 700px) {
+      .matrix {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      
+      body {
+        padding: 16px 12px;
+      }
+      
+      .input-panel {
+        padding: 16px;
+      }
+      
+      .add-btn {
+        width: 100%;
+        padding: 16px;
+      }
+      
+      .list-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start !important;
+      }
+      
+      .action-buttons {
+        flex-wrap: wrap;
+        width: 100%;
+      }
+      
+      .sort-controls {
+        width: 100%;
+      }
+      
+      .sort-btn {
+        flex: 1;
+        text-align: center;
+      }
+      
+      .list-left {
+        gap: 8px !important;
+      }
+      
+      .task-card {
+        padding: 12px;
+      }
+      
+      .task-meta {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+      }
+      
+      .header-controls {
+        width: 100%;
+        justify-content: space-between;
+        margin-left: 0;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .task-text {
+        font-size: 0.9rem;
+      }
+      
+      .task-date {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+      }
+      
+      .list-quadrant-tag {
+        font-size: 0.6rem;
+        padding: 2px 8px;
+      }
+      
+      .sync-status {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+      }
+      
+      h1 {
+        font-size: 1.4rem;
+      }
+      
+      .theme-toggle {
+        padding: 6px 10px;
+        font-size: 1rem;
+      }
+    }
+    
     .quadrant {
       background: white;
       border-radius: 28px;
@@ -116,6 +355,7 @@
       display: flex;
       flex-direction: column;
     }
+    
     .quadrant-header {
       display: flex;
       align-items: center;
@@ -123,11 +363,14 @@
       margin-bottom: 18px;
       padding-bottom: 12px;
       border-bottom: 2px dashed #cbd5e1;
+      flex-wrap: wrap;
     }
+    
     .quadrant-header h2 {
-      font-size: 1.25rem;
+      font-size: clamp(1rem, 4vw, 1.25rem);
       font-weight: 600;
     }
+    
     .badge {
       background: #f1f5f9;
       padding: 4px 10px;
@@ -135,17 +378,28 @@
       font-size: 0.75rem;
       font-weight: 600;
       color: #334155;
+      white-space: nowrap;
     }
+    
     .urgent-important { background: #fef2f2; border-left: 8px solid #dc2626; }
+    body.dark .urgent-important { background: #2d1a1a; }
+    
     .not-urgent-important { background: #f0fdf4; border-left: 8px solid #16a34a; }
+    body.dark .not-urgent-important { background: #1a2d1a; }
+    
     .urgent-not-important { background: #fff7ed; border-left: 8px solid #ea580c; }
+    body.dark .urgent-not-important { background: #2d1f0e; }
+    
     .not-urgent-not-important { background: #f8fafc; border-left: 8px solid #94a3b8; }
+    body.dark .not-urgent-not-important { background: #1a1f2d; }
+    
     .tasks-container {
-      min-height: 140px;
+      min-height: 120px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
+    
     .task-card {
       background: rgba(255,255,255,0.8);
       backdrop-filter: blur(2px);
@@ -159,21 +413,28 @@
       transition: all 0.1s;
       cursor: grab;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: pan-y;
     }
+    
     .task-card:active { cursor: grabbing; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
     .task-card.dragging { opacity: 0.5; transform: scale(0.98); }
+    
     .task-text {
       font-weight: 500;
       color: #0f172a;
       word-break: break-word;
       padding-right: 8px;
+      flex: 1;
     }
+    
     .task-meta {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-shrink: 0;
     }
+    
     .task-date {
       font-size: 0.7rem;
       background: #eef2ff;
@@ -182,6 +443,7 @@
       color: #1e40af;
       white-space: nowrap;
     }
+    
     .delete-btn {
       background: none;
       border: none;
@@ -189,10 +451,14 @@
       line-height: 1;
       cursor: pointer;
       color: #94a3b8;
-      padding: 0 5px;
+      padding: 8px 5px;
       transition: 0.1s;
+      min-width: 36px;
+      min-height: 36px;
     }
+    
     .delete-btn:hover { color: #b91c1c; }
+    
     .empty-placeholder {
       color: #94a3b8;
       font-style: italic;
@@ -200,6 +466,7 @@
       text-align: center;
       font-size: 0.9rem;
     }
+    
     .list-section {
       background: white;
       border-radius: 28px;
@@ -207,15 +474,20 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.02);
       border: 1px solid #e9eef3;
     }
+    
     .list-header {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       margin-bottom: 16px;
       flex-wrap: wrap;
+      gap: 12px;
     }
+    
     .list-header h3 { font-weight: 600; color: #0f172a; }
-    .sort-controls { display: flex; gap: 12px; }
+    
+    .sort-controls { display: flex; gap: 8px; }
+    
     .sort-btn {
       background: #f1f5f9;
       border: none;
@@ -226,8 +498,11 @@
       color: #1e293b;
       cursor: pointer;
       transition: 0.1s;
+      white-space: nowrap;
     }
+    
     .sort-btn.active { background: #2563eb; color: white; }
+    
     .task-list {
       list-style: none;
       padding: 0;
@@ -235,6 +510,7 @@
       flex-direction: column;
       gap: 8px;
     }
+    
     .list-item {
       display: flex;
       align-items: center;
@@ -244,12 +520,15 @@
       border-radius: 18px;
       border: 1px solid #eef2f6;
     }
+    
     .list-left {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 12px;
       flex-wrap: wrap;
+      flex: 1;
     }
+    
     .list-quadrant-tag {
       font-size: 0.7rem;
       font-weight: 700;
@@ -258,13 +537,21 @@
       background: #e2e8f0;
       color: #1e293b;
       text-transform: uppercase;
+      white-space: nowrap;
     }
+    
     .urgent-badge { background: #fee2e2; color: #b91c1c; }
+    body.dark .urgent-badge { background: #7f1d1d; color: #fca5a5; }
+    
     .important-badge { background: #dcfce7; color: #166534; }
+    body.dark .important-badge { background: #14532d; color: #bbf7d0; }
+    
     .action-buttons {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
     }
+    
     .secondary-btn {
       background: none;
       border: 1px solid #cbd5e1;
@@ -273,8 +560,12 @@
       font-size: 0.9rem;
       cursor: pointer;
       transition: 0.1s;
+      white-space: nowrap;
     }
+    
     .secondary-btn:hover { background: #f1f5f9; }
+    body.dark .secondary-btn:hover { background: #334155; }
+    
     .danger-btn {
       background: none;
       border: 1px solid #fca5a5;
@@ -283,34 +574,40 @@
       font-size: 0.9rem;
       cursor: pointer;
       color: #b91c1c;
+      white-space: nowrap;
     }
+    
     .danger-btn:hover { background: #fee2e2; }
+    body.dark .danger-btn:hover { background: #7f1d1d; }
   </style>
 </head>
 <body>
 <div class="app">
   <h1>
-    📋 Матрица Эйзенхауэра 
-    <span class="sync-status" id="syncStatus">
-      <span>🔄</span> <span id="syncText">Загрузка...</span>
-    </span>
+    📋 Матрица Эйзенхауэра
+    <div class="header-controls">
+      <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">🌙</button>
+      <span class="sync-status" id="syncStatus">
+        <span>🔄</span> <span id="syncText">Загрузка...</span>
+      </span>
+    </div>
   </h1>
 
   <div class="input-panel">
     <div class="task-input">
       <label>Новая задача</label>
-      <input type="text" id="taskInput" placeholder="Например: Позвонить клиенту" autocomplete="off">
+      <input type="text" id="taskInput" placeholder="Позвонить клиенту" autocomplete="off" enterkeyhint="done">
     </div>
     <button class="add-btn" id="addTaskBtn">➕ Добавить</button>
   </div>
 
   <div class="matrix">
     <div class="quadrant urgent-important" data-quadrant="q1">
-      <div class="quadrant-header"><h2>🔥 Срочно и Важно</h2><span class="badge">Сделать сейчас</span></div>
+      <div class="quadrant-header"><h2>🔥 Срочно и Важно</h2><span class="badge">Сейчас</span></div>
       <div class="tasks-container" id="q1"></div>
     </div>
     <div class="quadrant not-urgent-important" data-quadrant="q2">
-      <div class="quadrant-header"><h2>📌 Важно, не срочно</h2><span class="badge">Запланировать</span></div>
+      <div class="quadrant-header"><h2>📌 Важно, не срочно</h2><span class="badge">План</span></div>
       <div class="tasks-container" id="q2"></div>
     </div>
     <div class="quadrant urgent-not-important" data-quadrant="q3">
@@ -328,11 +625,11 @@
       <h3>📋 Все задачи</h3>
       <div class="action-buttons">
         <div class="sort-controls">
-          <button class="sort-btn active" data-sort="urgency">🔴 По срочности</button>
-          <button class="sort-btn" data-sort="date">📅 По дате</button>
+          <button class="sort-btn active" data-sort="urgency">🔴 Срочность</button>
+          <button class="sort-btn" data-sort="date">📅 Дата</button>
         </div>
-        <button class="secondary-btn" id="forceSyncBtn">🔄 Синхронизировать</button>
-        <button class="danger-btn" id="clearAllBtn">🗑️ Очистить всё</button>
+        <button class="secondary-btn" id="forceSyncBtn">🔄 Синхр.</button>
+        <button class="danger-btn" id="clearAllBtn">🗑️ Очистить</button>
       </div>
     </div>
     <ul class="task-list" id="taskListView"></ul>
@@ -347,15 +644,14 @@
     const JSONBIN_API_KEY = '$2a$10$0ozmFe4Nvhh5sArMK8ht6ehFszuWcGdVcoKJmHSDLjXNjBT.gjrv.';
     const JSONBIN_BIN_ID = '69e9151436566621a8deeaa1';
     
-    // URL для запросов
     const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
     
-    // Состояние
     let tasks = [];
     let syncInProgress = false;
     let lastSyncedData = null;
     
     const STORAGE_KEY = 'eisenhower_tasks_local_backup';
+    const THEME_KEY = 'eisenhower_theme';
     
     // DOM элементы
     const q1 = document.getElementById('q1');
@@ -371,9 +667,36 @@
     const forceSyncBtn = document.getElementById('forceSyncBtn');
     const syncStatusEl = document.getElementById('syncStatus');
     const syncTextEl = document.getElementById('syncText');
+    const themeToggle = document.getElementById('themeToggle');
     
     let currentSort = 'urgency';
     let draggedTaskId = null;
+
+    // ---------- ТЕМА ----------
+    function initTheme() {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.body.classList.add('dark');
+        themeToggle.textContent = '☀️';
+      } else {
+        document.body.classList.remove('dark');
+        themeToggle.textContent = '🌙';
+      }
+    }
+    
+    function toggleTheme() {
+      if (document.body.classList.contains('dark')) {
+        document.body.classList.remove('dark');
+        themeToggle.textContent = '🌙';
+        localStorage.setItem(THEME_KEY, 'light');
+      } else {
+        document.body.classList.add('dark');
+        themeToggle.textContent = '☀️';
+        localStorage.setItem(THEME_KEY, 'dark');
+      }
+    }
 
     // ---------- СТАТУС СИНХРОНИЗАЦИИ ----------
     function setSyncStatus(status, text) {
@@ -385,12 +708,12 @@
     // ---------- РАБОТА С ОБЛАКОМ ----------
     async function loadFromCloud() {
       if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('СЮДА')) {
-        setSyncStatus('error', 'Не указан API ключ');
+        setSyncStatus('error', 'Нет API ключа');
         loadFromLocalBackup();
         return;
       }
       
-      setSyncStatus('syncing', 'Загрузка из облака...');
+      setSyncStatus('syncing', 'Загрузка...');
       
       try {
         const response = await fetch(JSONBIN_URL, {
@@ -406,29 +729,27 @@
           tasks = cloudTasks;
           lastSyncedData = JSON.stringify(tasks);
           saveToLocalBackup();
-          setSyncStatus('synced', 'Загружено из облака');
+          setSyncStatus('synced', 'Облако');
         } else {
-          // Если облако пустое, но есть локальный бэкап - спросим?
           const local = localStorage.getItem(STORAGE_KEY);
           if (local) {
             tasks = JSON.parse(local);
-            await saveToCloud(true); // тихая загрузка на сервер
-            setSyncStatus('synced', 'Локальные данные загружены в облако');
+            await saveToCloud(true);
+            setSyncStatus('synced', 'Облако');
           } else {
-            // Первое использование
             tasks = [
               { id: generateId(), text: 'Пример: Важная встреча', quadrant: 'q1', createdAt: new Date().toISOString() },
               { id: generateId(), text: 'Пример: Почитать книгу', quadrant: 'q2', createdAt: new Date(Date.now() - 3600000).toISOString() }
             ];
             await saveToCloud();
-            setSyncStatus('synced', 'Созданы демо-задачи');
+            setSyncStatus('synced', 'Облако');
           }
         }
         
         renderAll();
       } catch (error) {
         console.error('Ошибка загрузки:', error);
-        setSyncStatus('error', 'Ошибка соединения. Локальные данные');
+        setSyncStatus('error', 'Нет связи');
         loadFromLocalBackup();
       }
     }
@@ -451,7 +772,7 @@
 
     async function saveToCloud(silent = false) {
       if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('СЮДА')) {
-        if (!silent) setSyncStatus('error', 'API ключ не настроен');
+        if (!silent) setSyncStatus('error', 'Нет ключа');
         saveToLocalBackup();
         return;
       }
@@ -472,10 +793,10 @@
         
         lastSyncedData = JSON.stringify(tasks);
         saveToLocalBackup();
-        if (!silent) setSyncStatus('synced', 'Сохранено в облаке');
+        if (!silent) setSyncStatus('synced', 'Облако');
       } catch (error) {
         console.error('Ошибка сохранения:', error);
-        if (!silent) setSyncStatus('error', 'Нет связи. Сохранено локально');
+        if (!silent) setSyncStatus('error', 'Нет связи');
         saveToLocalBackup();
       }
     }
@@ -493,7 +814,7 @@
     }
 
     async function clearAllTasks() {
-      if (confirm('Вы уверены? Все задачи будут удалены из облака и со всех устройств.')) {
+      if (confirm('Удалить все задачи из облака?')) {
         tasks = [];
         await saveToCloud();
         renderAll();
@@ -518,7 +839,7 @@
         for (let key in containers) {
           const emptyMsg = document.createElement('div');
           emptyMsg.className = 'empty-placeholder';
-          emptyMsg.textContent = 'Перетащите или добавьте задачу';
+          emptyMsg.textContent = 'Пусто';
           containers[key].appendChild(emptyMsg);
         }
         return;
@@ -726,16 +1047,17 @@
 
     // ---------- ИНИЦИАЛИЗАЦИЯ ----------
     async function init() {
+      initTheme();
       renderAll();
       setupDropZones();
       initSortButtons();
       
+      themeToggle.addEventListener('click', toggleTheme);
       addBtn.addEventListener('click', addNewTask);
       taskInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNewTask(); });
       clearAllBtn.addEventListener('click', clearAllTasks);
       forceSyncBtn.addEventListener('click', async () => { await saveToCloud(); });
       
-      // Загружаем из облака при старте
       await loadFromCloud();
     }
 
